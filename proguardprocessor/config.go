@@ -73,6 +73,9 @@ type Config struct {
 	// GCSProguardConfiguration is the configuration for sourcing proguard files from GCS.
 	GCSProguardConfiguration *GCSStoreConfiguration `mapstructure:"gcs_store"`
 
+	// AzureProguardConfiguration is the configuration for sourcing proguard files from Azure Blob Storage.
+	AzureProguardConfiguration *AzureStoreConfiguration `mapstructure:"azure_store"`
+
 	// Timeout is the maximum time to wait for a response from the symbolicator.
 	Timeout time.Duration `mapstructure:"timeout"`
 
@@ -97,6 +100,15 @@ type S3StoreConfiguration struct {
 type GCSStoreConfiguration struct {
 	// BucketName is the name of the GCS bucket.
 	BucketName string `mapstructure:"bucket"`
+	// Prefix is the prefix to use when looking for proguard files.
+	Prefix string `mapstructure:"prefix"`
+}
+
+type AzureStoreConfiguration struct {
+	// AccountName is the Azure storage account name.
+	AccountName string `mapstructure:"account_name"`
+	// ContainerName is the name of the Azure Blob Storage container.
+	ContainerName string `mapstructure:"container"`
 	// Prefix is the prefix to use when looking for proguard files.
 	Prefix string `mapstructure:"prefix"`
 }

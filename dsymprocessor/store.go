@@ -9,6 +9,8 @@ import (
 	"strings"
 
 	"cloud.google.com/go/storage"
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -119,6 +121,44 @@ func newGCSStore(ctx context.Context, logger *zap.Logger, cfg *GCSDSYMConfigurat
 			defer r.Close()
 
 			return io.ReadAll(r)
+		},
+		logger: logger,
+		prefix: cfg.Prefix,
+	}, nil
+}
+
+func newAzureStore(ctx context.Context, logger *zap.Logger, cfg *AzureDSYMConfiguration) (*store, error) {
+	if cfg == nil {
+		return nil, fmt.Errorf("no Azure configuration provided")
+	}
+
+	// Create a default Azure credential
+	credential, err := azidentity.NewDefaultAzureCredential(nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Azure credential: %w", err)
+	}
+
+	// Create the Azure Blob Storage client
+	url := fmt.Sprintf("https://%s.blob.core.windows.net/", cfg.AccountName)
+	client, err := azblob.NewClient(url, credential, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Azure Blob Storage client: %w", err)
+	}
+
+	return &store{
+		fetch: func(ctx context.Context, key string) ([]byte, error) {
+			// Azure Blob Storage keys can't start with a slash
+			key = strings.TrimPrefix(key, "/")
+
+			// Download the blob
+			response, err := client.DownloadStream(ctx, cfg.ContainerName, key, nil)
+			if err != nil {
+				return nil, err
+			}
+
+			defer response.Body.Close()
+
+			return io.ReadAll(response.Body)
 		},
 		logger: logger,
 		prefix: cfg.Prefix,

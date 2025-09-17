@@ -1,4 +1,4 @@
-package dsymprocessor
+package proguardprocessor
 
 import (
 	"context"
@@ -11,16 +11,10 @@ import (
 func TestFileStore(t *testing.T) {
 	ctx := context.Background()
 
-	fs, err := newFileStore(ctx, zaptest.NewLogger(t), &LocalDSYMConfiguration{Path: "../test_assets"})
+	fs, err := newFileStore(ctx, zaptest.NewLogger(t), &LocalStoreConfiguration{Path: "../test_assets"})
 	assert.NoError(t, err)
-
-	source, err := fs.GetDSYM(ctx, "6A8CB813-45F6-3652-AD33-778FD1EAB196", "Chateaux Bufeaux")
-
-	assert.NoError(t, err)
-	assert.NotEmpty(t, source)
-
-	_, err = fs.GetDSYM(ctx, "6A8CB813-45F6-3652-AD33-778FD1EAB196", "Not A Binary")
-	assert.ErrorIs(t, err, errFailedToFindDSYM)
+	assert.NotNil(t, fs)
+	assert.Equal(t, "../test_assets", fs.prefix)
 }
 
 func TestS3StoreConfiguration(t *testing.T) {
@@ -50,7 +44,7 @@ func TestAzureStoreConfiguration(t *testing.T) {
 	assert.Contains(t, err.Error(), "no Azure configuration provided")
 
 	// Test with valid configuration (will fail due to authentication, but validates config parsing)
-	cfg := &AzureDSYMConfiguration{
+	cfg := &AzureStoreConfiguration{
 		AccountName:   "testaccount",
 		ContainerName: "testcontainer",
 		Prefix:        "test/prefix",

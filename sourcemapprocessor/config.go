@@ -74,6 +74,9 @@ type Config struct {
 	// GCSSourceMapConfiguration is the configuration for sourcing source maps from GCS.
 	GCSSourceMapConfiguration *GCSSourceMapConfiguration `mapstructure:"gcs_source_maps"`
 
+	// AzureSourceMapConfiguration is the configuration for sourcing source maps from Azure Blob Storage.
+	AzureSourceMapConfiguration *AzureSourceMapConfiguration `mapstructure:"azure_source_maps"`
+
 	// Timeout is the maximum time to wait for a response from the symbolicator.
 	Timeout time.Duration `mapstructure:"timeout"`
 
@@ -99,6 +102,15 @@ type S3SourceMapConfiguration struct {
 type GCSSourceMapConfiguration struct {
 	// BucketName is the name of the GCS bucket.
 	BucketName string `mapstructure:"bucket"`
+	// Prefix is the prefix to use when looking for source maps.
+	Prefix string `mapstructure:"prefix"`
+}
+
+type AzureSourceMapConfiguration struct {
+	// AccountName is the Azure storage account name.
+	AccountName string `mapstructure:"account_name"`
+	// ContainerName is the name of the Azure Blob Storage container.
+	ContainerName string `mapstructure:"container"`
 	// Prefix is the prefix to use when looking for source maps.
 	Prefix string `mapstructure:"prefix"`
 }

@@ -314,6 +314,7 @@ the names of the configuration keys:
 | `local_source_maps` | `local_dsyms`           | `local_store`               |
 | `s3_source_maps`    | `s3_dsyms`              | `s3_store`                  |
 | `gcs_source_maps`   | `gcs_dsyms`             | `gcs_store`                 |
+| `azure_source_maps` | `azure_dsyms`           | `azure_store`               |
 
 ### File Store
 
@@ -394,3 +395,39 @@ Taking this as an example `https://example.com/static/dist/main.c383b093b0b66825
 The base file name is then found `main.c383b093b0b66825a9c3.js`.
 This path is joined with the prefix if provided and then used as the key to
 source from the bucket.
+
+### Azure Blob Storage
+
+You can also load the source(map) files from an Azure Blob Storage container.
+
+```yaml
+    processors:
+      source_map_symbolicator:
+        # source_map_store is used to configure which store to use, in this case Azure Blob Storage
+        source_map_store: azure_store
+        # azure_source_maps is used to configure the sourcing of source maps from Azure Blob Storage
+        azure_source_maps:
+          # account_name is the name of the Azure storage account
+          account_name: mystorageaccount
+          # container is the name of the container the files are stored in
+          container: source-maps-container
+          # (optional) prefix is used to nest the files in a sub key of the container
+          prefix: source-maps
+```
+
+#### Authentication
+We use the standard Azure SDK for Go [azblob](https://pkg.go.dev/github.com/Azure/azure-sdk-for-go/sdk/storage/azblob) library for interacting with Azure Blob Storage, which uses the [DefaultAzureCredential](https://pkg.go.dev/github.com/Azure/azure-sdk-for-go/sdk/azidentity#DefaultAzureCredential) for authentication. This supports multiple authentication methods in the following order:
+
+1. **Environment Variables**: Set `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`, and `AZURE_TENANT_ID`
+2. **Managed Identity**: Automatically used when running on Azure services (VMs, App Service, etc.)
+3. **Azure CLI**: Uses credentials from `az login`
+4. **Visual Studio Code**: Uses credentials from VS Code Azure extension
+5. **Azure PowerShell**: Uses credentials from Azure PowerShell
+
+#### How does the Azure Blob Storage store source the files?
+
+Each line of the stack trace includes the URL of the file it originated from.
+Taking this as an example `https://example.com/static/dist/main.c383b093b0b66825a9c3.js`.
+The base file name is then found `main.c383b093b0b66825a9c3.js`.
+This path is joined with the prefix if provided and then used as the blob name to
+source from the container.
