@@ -132,15 +132,30 @@ func newAzureStore(ctx context.Context, logger *zap.Logger, cfg *AzureDSYMConfig
 		return nil, fmt.Errorf("no Azure configuration provided")
 	}
 
-	// Create a default Azure credential
-	credential, err := azidentity.NewDefaultAzureCredential(nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create Azure credential: %w", err)
+	// Determine the endpoint URL
+	var url string
+	if cfg.Endpoint != "" {
+		url = cfg.Endpoint
+	} else {
+		url = fmt.Sprintf("https://%s.blob.core.windows.net/", cfg.AccountName)
 	}
 
-	// Create the Azure Blob Storage client
-	url := fmt.Sprintf("https://%s.blob.core.windows.net/", cfg.AccountName)
-	client, err := azblob.NewClient(url, credential, nil)
+	// Create Azure Blob Storage client
+	var client *azblob.Client
+	var err error
+
+	// Try connection string first (for Azurite), then fall back to credential-based auth
+	if cfg.ConnectionString != "" {
+		client, err = azblob.NewClientFromConnectionString(cfg.ConnectionString, nil)
+	} else {
+		// Create a default Azure credential
+		credential, credErr := azidentity.NewDefaultAzureCredential(nil)
+		if credErr != nil {
+			return nil, fmt.Errorf("failed to create Azure credential: %w", credErr)
+		}
+		client, err = azblob.NewClient(url, credential, &azblob.ClientOptions{})
+	}
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Azure Blob Storage client: %w", err)
 	}

@@ -113,6 +113,11 @@ type AzureSourceMapConfiguration struct {
 	ContainerName string `mapstructure:"container"`
 	// Prefix is the prefix to use when looking for source maps.
 	Prefix string `mapstructure:"prefix"`
+	// Endpoint is the Azure Blob Storage endpoint URL. If not specified, defaults to https://{account_name}.blob.core.windows.net/
+	// For Azurite testing, use: http://localhost:10000/{account_name}
+	Endpoint string `mapstructure:"endpoint"`
+	// ConnectionString is the Azure Blob Storage connection string. If specified, takes precedence over account name and endpoint.
+	ConnectionString string `mapstructure:"connection_string"`
 }
 
 // Validate checks the configuration for any issues.

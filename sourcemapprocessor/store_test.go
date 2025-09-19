@@ -55,6 +55,7 @@ func TestAzureStoreConfiguration(t *testing.T) {
 		AccountName:   "testaccount",
 		ContainerName: "testcontainer",
 		Prefix:        "test/prefix",
+		Endpoint:      "http://localhost:10000/testaccount",
 	}
 
 	// This will fail due to authentication, but we can verify the configuration is processed
