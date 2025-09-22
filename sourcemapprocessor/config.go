@@ -97,6 +97,9 @@ type S3SourceMapConfiguration struct {
 	BucketName string `mapstructure:"bucket"`
 	// Prefix is the prefix to use when looking for source maps.
 	Prefix string `mapstructure:"prefix"`
+	// Endpoint is the S3 endpoint URL. If not specified, defaults to AWS S3.
+	// For S3Mock testing, use: http://localhost:9090
+	Endpoint string `mapstructure:"endpoint"`
 }
 
 type GCSSourceMapConfiguration struct {

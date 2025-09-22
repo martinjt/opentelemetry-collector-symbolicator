@@ -78,6 +78,9 @@ type S3DSYMConfiguration struct {
 	BucketName string `mapstructure:"bucket"`
 	// Prefix is the prefix to use when looking for dSYMs.
 	Prefix string `mapstructure:"prefix"`
+	// Endpoint is the S3 endpoint URL. If not specified, defaults to AWS S3.
+	// For S3Mock testing, use: http://localhost:9090
+	Endpoint string `mapstructure:"endpoint"`
 }
 
 type GCSDSYMConfiguration struct {

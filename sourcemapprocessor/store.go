@@ -107,7 +107,14 @@ func newS3Store(ctx context.Context, logger *zap.Logger, cfg *S3SourceMapConfigu
 		return nil, err
 	}
 
-	client := s3.NewFromConfig(awsConfig)
+	clientOptions := func(o *s3.Options) {
+		if cfg.Endpoint != "" {
+			o.BaseEndpoint = aws.String(cfg.Endpoint)
+			o.UsePathStyle = true // S3Mock requires path-style access
+		}
+	}
+
+	client := s3.NewFromConfig(awsConfig, clientOptions)
 
 	return &store{
 		fetch: func(ctx context.Context, key string) ([]byte, error) {

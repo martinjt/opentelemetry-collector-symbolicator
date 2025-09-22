@@ -9,6 +9,21 @@ services:
     environment:
       - AZURITE_ACCOUNTS=devstoreaccount1:Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==
 
+  s3mock:
+    image: adobe/s3mock:latest
+    container_name: s3mock-storage
+    ports:
+      - "9090:9090"  # HTTP service
+      - "9191:9191"  # HTTPS service
+    volumes:
+      - s3mock-data:/data
+    environment:
+      - COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS=source-maps,dsyms,proguard-mappings
+      - COM_ADOBE_TESTING_S3MOCK_STORE_ROOT=/data
+      - COM_ADOBE_TESTING_S3MOCK_STORE_RETAIN_FILES_ON_EXIT=true
+
 volumes:
   azurite-data:
+    driver: local
+  s3mock-data:
     driver: local

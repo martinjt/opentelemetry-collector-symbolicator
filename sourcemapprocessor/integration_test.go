@@ -39,7 +39,7 @@ func TestAzureWithAzurite(t *testing.T) {
 
 	store, err := newAzureStore(ctx, zaptest.NewLogger(t), localAzuriteConfig)
 	assert.NoError(t, err)
-	s, err := newBasicSymbolicator(ctx, 5*time.Second, 128, store, tb, attributes)
+	s, err := newBasicSymbolicator(ctx, 1*time.Second, 128, store, tb, attributes)
 
 	assert.NoError(t, err)
 
@@ -53,13 +53,64 @@ func TestAzureWithAzurite(t *testing.T) {
 	obfuscatedExceptionSpan := generateObfuscatedSpan()
 
 	// Process the traces
-	_, err = processorInstance.processTraces(ctx, obfuscatedExceptionSpan)
+	symbolisedTraces, err := processorInstance.processTraces(ctx, obfuscatedExceptionSpan)
 	assert.NoError(t, err)
 
-	// symbolisedStackTrace, found := symbolisedTraces.ResourceSpans().At(0).ScopeSpans().At(0).Spans().At(0).Attributes().Get("exception.stacktrace")
-	// assert.True(t, found)
+	symbolisedStackTrace, found := symbolisedTraces.ResourceSpans().At(0).ScopeSpans().At(0).Spans().At(0).Attributes().Get("exception.stacktrace")
+	assert.True(t, found)
 
-	// assert.Equal(t, "Error: I blewed up!\n    at bar(basic-mapping-original.js:8:1)", symbolisedStackTrace.Str())
+	assert.Equal(t, "Error: I blewed up!\n    at bar(basic-mapping-original.js:8:1)", symbolisedStackTrace.Str())
+}
+
+func TestS3WithS3Mock(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	cfg := createDefaultConfig().(*Config)
+	testTel := componenttest.NewTelemetry()
+	tb, err := metadata.NewTelemetryBuilder(testTel.NewTelemetrySettings())
+	defer tb.Shutdown()
+
+	assert.NoError(t, err)
+
+	attributes := attribute.NewSet(
+		attribute.String("processor_type", "symbolicator"),
+	)
+	localS3MockConfig := &S3SourceMapConfiguration{
+		Region:     "us-east-1",
+		BucketName: "source-maps",
+		Prefix:     "",
+		Endpoint:   "http://localhost:9090",
+	}
+	cfg.SourceMapStoreKey = "s3_store"
+	cfg.S3SourceMapConfiguration = localS3MockConfig
+
+	// Set AWS credentials for S3Mock (these are dummy values)
+	t.Setenv("AWS_ACCESS_KEY_ID", "test")
+	t.Setenv("AWS_SECRET_ACCESS_KEY", "test")
+
+	store, err := newS3Store(ctx, zaptest.NewLogger(t), localS3MockConfig)
+	assert.NoError(t, err)
+	s, err := newBasicSymbolicator(ctx, 1*time.Second, 128, store, tb, attributes)
+
+	assert.NoError(t, err)
+
+	processorInstance := newSymbolicatorProcessor(ctx, cfg, processor.Settings{
+		TelemetrySettings: component.TelemetrySettings{
+			Logger: zaptest.NewLogger(t),
+		},
+	}, s, tb, attributes)
+
+	// Create test data based on the provided JSON
+	obfuscatedExceptionSpan := generateObfuscatedSpan()
+
+	// Process the traces
+	symbolisedTraces, err := processorInstance.processTraces(ctx, obfuscatedExceptionSpan)
+	assert.NoError(t, err)
+
+	symbolisedStackTrace, found := symbolisedTraces.ResourceSpans().At(0).ScopeSpans().At(0).Spans().At(0).Attributes().Get("exception.stacktrace")
+	assert.True(t, found)
+
+	assert.Equal(t, "Error: I blewed up!\n    at bar(basic-mapping-original.js:8:1)", symbolisedStackTrace.Str())
 }
 
 func generateObfuscatedSpan() ptrace.Traces {
