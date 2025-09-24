@@ -56,7 +56,7 @@ func newSymbolicatorProcessor(_ context.Context, cfg *Config, set processor.Sett
 // processTraces processes the received traces. It is the function configured
 // in the processorhelper.NewTraces call in factory.go
 func (sp *symbolicatorProcessor) processLogs(ctx context.Context, logs plog.Logs) (plog.Logs, error) {
-	sp.logger.Info("Processing logs")
+	sp.logger.Debug("Processing logs")
 
 	startTime := time.Now()
 	for i := 0; i < logs.ResourceLogs().Len(); i++ {
@@ -92,7 +92,7 @@ func (sp *symbolicatorProcessor) processResourceSpans(ctx context.Context, rl pl
 
 			// neither attribute exists, do nothing
 			err := fmt.Errorf("%w: %s or %s", errMissingAttribute, sp.cfg.StackTraceAttributeKey, sp.cfg.MetricKitStackTraceAttributeKey)
-			sp.logger.Debug("Error processing span", zap.Error(err))
+			sp.logger.Error("Error processing span", zap.Error(err))
 		}
 	}
 }
@@ -115,7 +115,7 @@ func (sp *symbolicatorProcessor) processStackTraceAttributes(ctx context.Context
 	if err != nil {
 		attributes.PutBool(sp.cfg.SymbolicatorFailureAttributeKey, true)
 		attributes.PutStr("exception.symbolicator.error", err.Error())
-		sp.logger.Debug("Error processing span", zap.Error(err))
+		sp.logger.Error("Error processing span", zap.Error(err))
 	} else {
 		attributes.PutBool(sp.cfg.SymbolicatorFailureAttributeKey, false)
 	}
@@ -129,7 +129,7 @@ func (sp *symbolicatorProcessor) processStackTraceAttributesThrows(ctx context.C
 
 	if stackTraceValue, ok = attributes.Get(sp.cfg.StackTraceAttributeKey); !ok {
 		// we should never get here (our caller checks this)
-		return fmt.Errorf("Invalid state! Called proceStackTraceAttributes while missing %s attribute", sp.cfg.StackTraceAttributeKey)
+		return fmt.Errorf("invalid state! called proceStackTraceAttributes while missing %s attribute", sp.cfg.StackTraceAttributeKey)
 	}
 	rawStackTrace := stackTraceValue.Str()
 

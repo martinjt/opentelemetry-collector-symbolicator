@@ -48,6 +48,7 @@ func (s *store) GetSourceMap(ctx context.Context, url string) ([]byte, []byte, e
 		path += "?" + u.RawQuery
 	}
 
+	s.logger.Debug("Fetching source file", zap.String("path", path))
 	source, err := s.fetch(ctx, path)
 
 	if err != nil {
@@ -66,6 +67,7 @@ func (s *store) GetSourceMap(ctx context.Context, url string) ([]byte, []byte, e
 	// the map name is relative to the source file
 	path = filepath.Join(filepath.Dir(path), mapName)
 
+	s.logger.Debug("Fetching map file", zap.String("path", path))
 	sourceMap, err := s.fetch(ctx, path)
 
 	if err != nil {
