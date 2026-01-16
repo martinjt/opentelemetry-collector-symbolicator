@@ -2,7 +2,7 @@ module github.com/honeycombio/opentelemetry-collector-symbolicator/proguardproce
 
 go 1.24.0
 
-toolchain go1.24.3
+toolchain go1.24.5
 
 require (
 	cloud.google.com/go/storage v1.59.0

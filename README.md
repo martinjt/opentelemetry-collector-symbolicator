@@ -427,6 +427,7 @@ the names of the configuration keys:
 | `local_source_maps` | `local_dsyms`           | `local_store`               |
 | `s3_source_maps`    | `s3_dsyms`              | `s3_store`                  |
 | `gcs_source_maps`   | `gcs_dsyms`             | `gcs_store`                 |
+| `azure_source_maps` | `azure_dsyms`           | `azure_store`               |
 
 ### File Store
 
@@ -507,3 +508,53 @@ Taking this as an example `https://example.com/static/dist/main.c383b093b0b66825
 The base file name is then found `main.c383b093b0b66825a9c3.js`.
 This path is joined with the prefix if provided and then used as the key to
 source from the bucket.
+
+### Azure Blob Storage
+
+You can also load the source(map) files from an Azure Blob Storage container.
+
+```yaml
+    processors:
+      source_map_symbolicator:
+        # source_map_store is used to configure which store to use, in this case Azure Blob Storage
+        source_map_store: azure_store
+        # azure_source_maps is used to configure the sourcing of source maps from Azure Blob Storage
+        azure_source_maps:
+          # account_name is the name of the Azure storage account
+          account_name: mystorageaccount
+          # container is the name of the container the files are stored in
+          container: source-maps-container
+          # (optional) prefix is used to nest the files in a sub key of the container
+          prefix: source-maps
+          # (optional) endpoint is the Azure Blob Storage endpoint URL
+          # If not specified, defaults to https://{account_name}.blob.core.windows.net/
+          # For Azurite testing, use: http://localhost:10000/{account_name}
+          # endpoint: http://localhost:10000/mystorageaccount
+          # (optional) connection_string is the Azure Blob Storage connection string
+          # If specified, takes precedence over account_name and endpoint
+          # For Azurite testing, use: DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://localhost:10000/devstoreaccount1
+          # connection_string: "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://localhost:10000/devstoreaccount1"
+```
+
+#### Authentication
+We use the standard Azure SDK for Go [azblob](https://pkg.go.dev/github.com/Azure/azure-sdk-for-go/sdk/storage/azblob) library for interacting with Azure Blob Storage. Authentication can be configured in two ways:
+
+**Option 1: Connection String (Recommended for Azurite/Local Development)**
+Set the `connection_string` field in the configuration. This takes precedence over other authentication methods and is ideal for:
+- Local development with Azurite
+- Environments where you have the full connection string
+
+**Option 2: DefaultAzureCredential (Recommended for Production)**
+If no connection string is provided, the processor uses [DefaultAzureCredential](https://pkg.go.dev/github.com/Azure/azure-sdk-for-go/sdk/azidentity#DefaultAzureCredential) which supports multiple authentication methods in the following order:
+
+1. **Environment Variables**: Set `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`, and `AZURE_TENANT_ID`
+2. **Managed Identity**: Automatically used when running on Azure services (VMs, App Service, etc.)
+3. **Azure CLI**: Uses credentials from `az login`
+
+#### How does the Azure Blob Storage store source the files?
+
+Each line of the stack trace includes the URL of the file it originated from.
+Taking this as an example `https://example.com/static/dist/main.c383b093b0b66825a9c3.js`.
+The base file name is then found `main.c383b093b0b66825a9c3.js`.
+This path is joined with the prefix if provided and then used as the blob name to
+source from the container.

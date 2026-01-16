@@ -56,6 +56,9 @@ type Config struct {
 	// GCSDSYMConfiguration is the configuration for sourcing source maps from GCS.
 	GCSDSYMConfiguration *GCSDSYMConfiguration `mapstructure:"gcs_dsyms"`
 
+	// AzureDSYMConfiguration is the configuration for sourcing dSYMs from Azure Blob Storage.
+	AzureDSYMConfiguration *AzureDSYMConfiguration `mapstructure:"azure_dsyms"`
+
 	// Timeout is the maximum time to wait for a response from the symbolicator.
 	Timeout time.Duration `mapstructure:"timeout"`
 
@@ -85,6 +88,9 @@ type S3DSYMConfiguration struct {
 	BucketName string `mapstructure:"bucket"`
 	// Prefix is the prefix to use when looking for dSYMs.
 	Prefix string `mapstructure:"prefix"`
+	// Endpoint is the S3 endpoint URL. If not specified, defaults to AWS S3.
+	// For S3Mock testing, use: http://localhost:9090
+	Endpoint string `mapstructure:"endpoint"`
 }
 
 type GCSDSYMConfiguration struct {
@@ -92,6 +98,20 @@ type GCSDSYMConfiguration struct {
 	BucketName string `mapstructure:"bucket"`
 	// Prefix is the prefix to use when looking for dSYMs.
 	Prefix string `mapstructure:"prefix"`
+}
+
+type AzureDSYMConfiguration struct {
+	// AccountName is the Azure storage account name.
+	AccountName string `mapstructure:"account_name"`
+	// ContainerName is the name of the Azure Blob Storage container.
+	ContainerName string `mapstructure:"container"`
+	// Prefix is the prefix to use when looking for dSYMs.
+	Prefix string `mapstructure:"prefix"`
+	// Endpoint is the Azure Blob Storage endpoint URL. If not specified, defaults to https://{account_name}.blob.core.windows.net/
+	// For Azurite testing, use: http://localhost:10000/{account_name}
+	Endpoint string `mapstructure:"endpoint"`
+	// ConnectionString is the Azure Blob Storage connection string. If specified, takes precedence over account name and endpoint.
+	ConnectionString string `mapstructure:"connection_string"`
 }
 
 // Validate checks the configuration for any issues.

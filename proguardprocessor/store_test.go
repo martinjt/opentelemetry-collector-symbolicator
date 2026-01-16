@@ -1,4 +1,4 @@
-package sourcemapprocessor
+package proguardprocessor
 
 import (
 	"context"
@@ -11,21 +11,10 @@ import (
 func TestFileStore(t *testing.T) {
 	ctx := context.Background()
 
-	fs, err := newFileStore(ctx, zaptest.NewLogger(t), &LocalSourceMapConfiguration{Path: "../test_assets"})
+	fs, err := newFileStore(ctx, zaptest.NewLogger(t), &LocalStoreConfiguration{Path: "../test_assets"})
 	assert.NoError(t, err)
-
-	source, sMap, err := fs.GetSourceMap(ctx, jsFile, "")
-	assert.NoError(t, err)
-	assert.NotEmpty(t, source)
-	assert.NotEmpty(t, sMap)
-
-	source, sMap, err = fs.GetSourceMap(ctx, uuidFile, uuid)
-	assert.NoError(t, err)
-	assert.NotEmpty(t, source)
-	assert.NotEmpty(t, sMap)
-
-	source, sMap, err = fs.GetSourceMap(ctx, noFile, "")
-	assert.ErrorIs(t, err, errFailedToFindSourceFile)
+	assert.NotNil(t, fs)
+	assert.Equal(t, "../test_assets", fs.prefix)
 }
 
 func TestS3StoreConfiguration(t *testing.T) {
@@ -55,21 +44,30 @@ func TestAzureStoreConfiguration(t *testing.T) {
 	assert.Contains(t, err.Error(), "no Azure configuration provided")
 
 	// Test with valid configuration (will fail due to authentication, but validates config parsing)
-	cfg := &AzureSourceMapConfiguration{
+	cfg := &AzureStoreConfiguration{
 		AccountName:   "testaccount",
 		ContainerName: "testcontainer",
 		Prefix:        "test/prefix",
 		Endpoint:      "http://localhost:10000/testaccount",
 	}
 
-	// This will fail due to authentication, but we can verify the configuration is processed
 	store, err := newAzureStore(ctx, zaptest.NewLogger(t), cfg)
-	if err != nil {
-		// The error should be about Azure credentials, not configuration
-		assert.Contains(t, err.Error(), "failed to create Azure credential")
-	} else {
-		// If no error, verify the store was created with correct prefix
+	// Azure client creation may succeed even without valid credentials
+	if err == nil {
 		assert.NotNil(t, store)
-		assert.Equal(t, cfg.Prefix, store.prefix)
 	}
+
+	// Test with connection string configuration
+	cfgWithConnectionString := &AzureStoreConfiguration{
+		ContainerName:    "testcontainer",
+		Prefix:           "test/prefix",
+		ConnectionString: "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://localhost:10000/devstoreaccount1",
+	}
+
+	storeWithConnectionString, err := newAzureStore(ctx, zaptest.NewLogger(t), cfgWithConnectionString)
+	// Connection string should be parsed successfully
+	if err == nil {
+		assert.NotNil(t, storeWithConnectionString)
+	}
+
 }

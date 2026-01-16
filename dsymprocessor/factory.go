@@ -58,6 +58,8 @@ func createLogsProcessor(ctx context.Context, set processor.Settings, cfg compon
 		store, err = newS3Store(ctx, set.Logger, symCfg.S3DSYMConfiguration)
 	case "gcs_store":
 		store, err = newGCSStore(ctx, set.Logger, symCfg.GCSDSYMConfiguration)
+	case "azure_store":
+		store, err = newAzureStore(ctx, set.Logger, symCfg.AzureDSYMConfiguration)
 	}
 
 	if err != nil {

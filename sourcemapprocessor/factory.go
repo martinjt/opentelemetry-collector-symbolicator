@@ -66,6 +66,8 @@ func createSymbolicatorProcessor(ctx context.Context, set processor.Settings, cf
 		store, err = newS3Store(ctx, set.Logger, symCfg.S3SourceMapConfiguration)
 	case "gcs_store":
 		store, err = newGCSStore(ctx, set.Logger, symCfg.GCSSourceMapConfiguration)
+	case "azure_store":
+		store, err = newAzureStore(ctx, set.Logger, symCfg.AzureSourceMapConfiguration)
 	}
 
 	if err != nil {
